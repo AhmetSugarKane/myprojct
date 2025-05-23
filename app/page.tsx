@@ -155,7 +155,12 @@ export default function Home() {
       try {
         // Önce yönlendirme linkini al
         debugLog('Yönlendirme linki alınıyor');
-        const redirectResponse = await fetch('/api/redirect-link');
+        const redirectResponse = await fetch('/api/redirect-link', {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        });
         if (redirectResponse.ok) {
           const { url } = await redirectResponse.json();
           debugLog('Yönlendirme linki alındı', { url });
@@ -172,18 +177,30 @@ export default function Home() {
 
         // IP detaylarını al
         debugLog('IP API isteği yapılıyor');
-        const response = await fetch('https://ip-api.com/json/', {
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-          },
-          mode: 'cors',
-          cache: 'no-cache'
-        }).catch(error => {
-          debugLog('IP API fetch hatası', error);
-          throw new Error(`IP API fetch error: ${error.message}`);
-        });
+        let response;
+        try {
+          response = await fetch('https://ip-api.com/json/', {
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            },
+            mode: 'cors',
+            cache: 'no-cache'
+          });
+        } catch (fetchError) {
+          debugLog('IP API fetch hatası', fetchError);
+          // HTTPS başarısız olursa HTTP'yi dene
+          response = await fetch('http://ip-api.com/json/', {
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            },
+            mode: 'cors',
+            cache: 'no-cache'
+          });
+        }
         
         if (!response.ok) {
           debugLog('IP API hatası', { status: response.status });
