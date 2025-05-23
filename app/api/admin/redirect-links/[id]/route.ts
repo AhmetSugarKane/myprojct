@@ -2,12 +2,18 @@ import { NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 
+type RouteContext = {
+  params: {
+    id: string;
+  };
+};
+
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  context: RouteContext
 ): Promise<NextResponse> {
   try {
-    const { id } = params;
+    const { id } = context.params;
 
     if (!id) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
