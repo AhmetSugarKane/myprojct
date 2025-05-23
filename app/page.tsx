@@ -172,12 +172,17 @@ export default function Home() {
 
         // IP detaylarını al
         debugLog('IP API isteği yapılıyor');
-        const response = await fetch('http://ip-api.com/json/', {
+        const response = await fetch('https://ip-api.com/json/', {
           headers: {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-          }
+          },
+          mode: 'cors',
+          cache: 'no-cache'
+        }).catch(error => {
+          debugLog('IP API fetch hatası', error);
+          throw new Error(`IP API fetch error: ${error.message}`);
         });
         
         if (!response.ok) {
