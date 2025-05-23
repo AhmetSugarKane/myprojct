@@ -276,11 +276,10 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Pixel ID ve Yönlendirme Linki Yönetimi */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          {/* Pixel ID Yönetimi */}
+        {/* Yönlendirme Linki Yönetimi */}
+        <div className="grid grid-cols-1 gap-6 mb-8">
           <div className="bg-[#161B22] rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-bold text-[#58A6FF] mb-4">Pixel ID Yönetimi</h2>
+            <h2 className="text-xl font-bold text-[#58A6FF] mb-4">Yönlendirme Linki Yönetimi</h2>
             <form onSubmit={handleAddRedirectLink} className="mb-4">
               <div className="flex gap-4">
                 <input
