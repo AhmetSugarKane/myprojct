@@ -95,7 +95,7 @@ export default function Home() {
 
   // Debug log fonksiyonu
   const debugLog = (message: string, data?: any) => {
-    console.log(`[DEBUG] ${new Date().toISOString()} - ${message}`, data || '');
+    console.log(`[DEBUG v0.001] ${new Date().toISOString()} - ${message}`, data || '');
   };
 
   // Timezone kontrolü fonksiyonu
@@ -179,10 +179,12 @@ export default function Home() {
         debugLog('IP API isteği yapılıyor');
         try {
           const response = await fetch('/api/ip-info', {
+            method: 'GET',
             headers: {
               'Accept': 'application/json',
               'Content-Type': 'application/json'
-            }
+            },
+            cache: 'no-store'
           });
           
           if (!response.ok) {
@@ -191,6 +193,11 @@ export default function Home() {
           }
           
           const data = await response.json();
+          if (data.error) {
+            debugLog('IP API hata yanıtı', data);
+            throw new Error(data.error);
+          }
+          
           debugLog('IP API yanıtı alındı', data);
           
           // Rate limit kontrolü
