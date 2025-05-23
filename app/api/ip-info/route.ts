@@ -30,7 +30,7 @@ export async function GET() {
     }
 
     // Get location data from ipapi.com
-    const geoResponse = await fetch(`https://ipapi.com/ip_api.php?ip=${ip}`, {
+    const geoResponse = await fetch(`https://ipapi.co/${ip}/json/`, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
@@ -64,11 +64,11 @@ export async function GET() {
       country: geoData.country_name || 'Unknown',
       countryCode: geoData.country_code || 'Unknown',
       region: geoData.region_code || 'Unknown',
-      regionName: geoData.region_name || 'Unknown',
+      regionName: geoData.region || 'Unknown',
       city: geoData.city || 'Unknown',
-      isp: geoData.connection?.isp || 'Unknown',
-      org: geoData.connection?.organization || 'Unknown',
-      as: geoData.connection?.asn || 'Unknown',
+      isp: geoData.org || 'Unknown',
+      org: geoData.org || 'Unknown',
+      as: geoData.asn || 'Unknown',
       query: ip
     };
 
