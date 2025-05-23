@@ -2,18 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 
-interface RouteSegment {
-  params: {
-    id: string;
-  };
-}
-
 export async function DELETE(
   request: NextRequest,
-  segment: RouteSegment
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = segment.params;
+    const { id } = params;
 
     if (!id) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
@@ -21,7 +15,7 @@ export async function DELETE(
 
     const client = await clientPromise;
     const db = client.db("clocker");
-    
+
     const result = await db.collection("redirectLink").deleteOne({ _id: new ObjectId(id) });
 
     if (result.deletedCount === 0) {
@@ -33,4 +27,4 @@ export async function DELETE(
     console.error('Delete redirect link error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
-} 
+}
