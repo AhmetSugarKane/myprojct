@@ -5,23 +5,36 @@ export const revalidate = 0;
 
 export async function GET() {
   try {
-    console.log('[DEBUG v0.003] IP API isteği başlatılıyor...');
+    console.log('[DEBUG v0.005] IP API isteği başlatılıyor...');
 
-    // IP API'ye istek yap
-    const response = await fetch('https://ip-api.com/json/', {
+    // Önce IP adresini al
+    const ipResponse = await fetch('https://api.ipify.org?format=json', {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        'Content-Type': 'application/json'
       },
       next: { revalidate: 0 }
     });
 
-    console.log('[DEBUG v0.003] IP API yanıt durumu:', response.status);
+    if (!ipResponse.ok) {
+      throw new Error('IP adresi alınamadı');
+    }
 
-    if (!response.ok) {
-      console.error('[DEBUG v0.003] IP API yanıt hatası:', response.status);
+    const ipData = await ipResponse.json();
+    console.log('[DEBUG v0.005] IP adresi alındı:', ipData);
+
+    // IP adresine göre ülke bilgisini al
+    const countryResponse = await fetch(`https://ipapi.co/${ipData.ip}/json/`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      next: { revalidate: 0 }
+    });
+
+    if (!countryResponse.ok) {
       // Hata durumunda varsayılan yanıt
       return NextResponse.json({
         status: 'success',
@@ -33,16 +46,30 @@ export async function GET() {
         isp: 'Unknown',
         org: 'Unknown',
         as: 'Unknown',
-        query: 'Unknown'
+        query: ipData.ip
       });
     }
 
-    const data = await response.json();
-    console.log('[DEBUG v0.003] IP API yanıtı alındı:', data);
-    
-    return NextResponse.json(data);
+    const countryData = await countryResponse.json();
+    console.log('[DEBUG v0.005] Ülke bilgisi alındı:', countryData);
+
+    // Yanıtı formatla
+    const formattedData = {
+      status: 'success',
+      country: countryData.country_name || 'Unknown',
+      countryCode: countryData.country_code || 'Unknown',
+      region: countryData.region || 'Unknown',
+      regionName: countryData.region_name || 'Unknown',
+      city: countryData.city || 'Unknown',
+      isp: countryData.org || 'Unknown',
+      org: countryData.org || 'Unknown',
+      as: countryData.asn || 'Unknown',
+      query: ipData.ip
+    };
+
+    return NextResponse.json(formattedData);
   } catch (error) {
-    console.error('[DEBUG v0.003] IP API Error:', error);
+    console.error('[DEBUG v0.005] IP API Error:', error);
     
     // Hata durumunda varsayılan yanıt
     return NextResponse.json({
