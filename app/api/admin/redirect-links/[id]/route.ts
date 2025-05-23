@@ -5,7 +5,7 @@ import { ObjectId } from 'mongodb';
 export async function DELETE(
   request: Request,
   { params }: { params: { id: string } }
-) {
+): Promise<NextResponse> {
   try {
     const { id } = params;
 
@@ -16,7 +16,11 @@ export async function DELETE(
     const client = await clientPromise;
     const db = client.db("clocker");
     
-    await db.collection("redirectLink").deleteOne({ _id: new ObjectId(id) });
+    const result = await db.collection("redirectLink").deleteOne({ _id: new ObjectId(id) });
+
+    if (result.deletedCount === 0) {
+      return NextResponse.json({ error: 'Redirect link not found' }, { status: 404 });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
