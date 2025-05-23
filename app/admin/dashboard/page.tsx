@@ -3,12 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-interface PixelId {
-  _id: string;
-  pixelId: string;
-  createdAt: string;
-}
-
 interface RedirectLink {
   _id: string;
   url: string;
@@ -28,9 +22,7 @@ interface ClickLog {
 export default function AdminDashboard() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
-  const [pixelIds, setPixelIds] = useState<PixelId[]>([]);
   const [redirectLinks, setRedirectLinks] = useState<RedirectLink[]>([]);
-  const [newPixelId, setNewPixelId] = useState('');
   const [newRedirectUrl, setNewRedirectUrl] = useState('');
   const [stats, setStats] = useState({
     totalRedirects: 0,
@@ -127,40 +119,25 @@ export default function AdminDashboard() {
 
   const fetchData = async () => {
     try {
-      const [pixelResponse, redirectResponse] = await Promise.all([
-        fetch('/api/admin/pixel-ids'),
+      const [redirectResponse] = await Promise.all([
         fetch('/api/admin/redirect-links')
       ]);
-
-      if (pixelResponse.ok) {
-        const data = await pixelResponse.json();
-        setPixelIds(data);
-      }
 
       if (redirectResponse.ok) {
         const data = await redirectResponse.json();
         setRedirectLinks(data);
       }
-    } catch (error) {
-      console.error('Fetch error:', error);
-    }
-  };
 
-  const handleAddPixelId = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const response = await fetch('/api/admin/pixel-ids', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pixelId: newPixelId })
-      });
-
-      if (response.ok) {
-        setNewPixelId('');
-        fetchData();
+      // Fetch stats
+      const statsResponse = await fetch('/api/admin/stats');
+      if (statsResponse.ok) {
+        const statsData = await statsResponse.json();
+        setStats(statsData);
       }
     } catch (error) {
-      console.error('Add pixel ID error:', error);
+      console.error('Error fetching data:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -179,20 +156,6 @@ export default function AdminDashboard() {
       }
     } catch (error) {
       console.error('Add redirect link error:', error);
-    }
-  };
-
-  const handleDeletePixelId = async (id: string) => {
-    try {
-      const response = await fetch(`/api/admin/pixel-ids/${id}`, {
-        method: 'DELETE'
-      });
-
-      if (response.ok) {
-        fetchData();
-      }
-    } catch (error) {
-      console.error('Delete pixel ID error:', error);
     }
   };
 
@@ -318,44 +281,6 @@ export default function AdminDashboard() {
           {/* Pixel ID Yönetimi */}
           <div className="bg-[#161B22] rounded-lg shadow-md p-6">
             <h2 className="text-xl font-bold text-[#58A6FF] mb-4">Pixel ID Yönetimi</h2>
-            <form onSubmit={handleAddPixelId} className="mb-4">
-              <div className="flex gap-4">
-                <input
-                  type="text"
-                  value={newPixelId}
-                  onChange={(e) => setNewPixelId(e.target.value)}
-                  placeholder="Yeni Pixel ID"
-                  className="flex-1 bg-[#0D1117] border border-[#30363D] rounded-md px-4 py-2 text-gray-300"
-                />
-                <button
-                  type="submit"
-                  className="bg-[#58A6FF] text-white px-4 py-2 rounded-md hover:bg-[#1F6FEB]"
-                >
-                  Ekle
-                </button>
-              </div>
-            </form>
-            <div className="space-y-2">
-              {pixelIds.map((pixel) => (
-                <div
-                  key={pixel._id}
-                  className="flex justify-between items-center bg-[#0D1117] p-4 rounded-md"
-                >
-                  <span className="text-gray-300">{pixel.pixelId}</span>
-                  <button
-                    onClick={() => handleDeletePixelId(pixel._id)}
-                    className="text-red-500 hover:text-red-400"
-                  >
-                    Sil
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Yönlendirme Linki Yönetimi */}
-          <div className="bg-[#161B22] rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-bold text-[#58A6FF] mb-4">Yönlendirme Linki Yönetimi</h2>
             <form onSubmit={handleAddRedirectLink} className="mb-4">
               <div className="flex gap-4">
                 <input
