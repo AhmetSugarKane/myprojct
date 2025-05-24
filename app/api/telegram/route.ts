@@ -12,18 +12,19 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { ip, userAgent, timezone, isTurkishTimezone, platform, language, screenResolution } = body;
 
-    const message = `
+    // HTML karakterlerini temizle ve mesajı düzenle
+    const cleanMessage = `
 🔔 Yeni Ziyaret!
 
-📍 IP: ${ip}
-🌍 Timezone: ${timezone}
+📍 IP: ${ip?.replace(/[<>]/g, '') || 'Bilinmiyor'}
+🌍 Timezone: ${timezone?.replace(/[<>]/g, '') || 'Bilinmiyor'}
 🇹🇷 Türkiye: ${isTurkishTimezone ? 'Evet' : 'Hayır'}
-💻 Platform: ${platform}
-🌐 Dil: ${language}
-📱 Ekran: ${screenResolution}
-🔍 User Agent: ${userAgent}
+💻 Platform: ${platform?.replace(/[<>]/g, '') || 'Bilinmiyor'}
+🌐 Dil: ${language?.replace(/[<>]/g, '') || 'Bilinmiyor'}
+📱 Ekran: ${screenResolution?.replace(/[<>]/g, '') || 'Bilinmiyor'}
+🔍 User Agent: ${userAgent?.replace(/[<>]/g, '') || 'Bilinmiyor'}
 ⏰ Zaman: ${new Date().toLocaleString('tr-TR')}
-    `.trim();
+`.trim();
 
     const response = await fetch(
       `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
@@ -34,14 +35,18 @@ export async function POST(request: Request) {
         },
         body: JSON.stringify({
           chat_id: TELEGRAM_CHAT_ID,
-          text: message,
-          parse_mode: 'HTML'
+          text: cleanMessage,
+          parse_mode: 'HTML',
+          disable_web_page_preview: true
         })
       }
     );
 
+    const responseData = await response.json();
+
     if (!response.ok) {
-      throw new Error('Failed to send Telegram message');
+      console.error('Telegram API Error:', responseData);
+      throw new Error(`Failed to send Telegram message: ${responseData.description || 'Unknown error'}`);
     }
 
     return NextResponse.json({ 
@@ -52,7 +57,7 @@ export async function POST(request: Request) {
     console.error('Telegram notification error:', error);
     return NextResponse.json({ 
       status: 'error',
-      message: 'Failed to send Telegram notification'
+      message: error instanceof Error ? error.message : 'Failed to send Telegram notification'
     }, { status: 500 });
   }
 } 
