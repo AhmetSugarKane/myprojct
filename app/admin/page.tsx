@@ -22,31 +22,6 @@ export default function AdminPage() {
       });
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setMessage('');
-
-    try {
-      const response = await fetch('/api/redirect-url', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ url: redirectUrl })
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setMessage('URL başarıyla güncellendi. Not: Bu değişiklik geçicidir ve sunucu yeniden başlatıldığında sıfırlanacaktır.');
-      } else {
-        setMessage(data.message || 'Bir hata oluştu');
-      }
-    } catch (error) {
-      setMessage('Bir hata oluştu');
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -58,44 +33,20 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-6 text-center">Yönlendirme URL'si Yönetimi</h1>
+        <h1 className="text-2xl font-bold mb-6 text-center">Yönlendirme URL'si</h1>
         
-        <div className="mb-4 p-3 bg-yellow-100 text-yellow-700 rounded-md">
+        <div className="mb-4 p-3 bg-blue-100 text-blue-700 rounded-md">
           <p className="text-sm">
-            Not: Bu sayfadaki değişiklikler geçicidir ve sunucu yeniden başlatıldığında sıfırlanacaktır. 
-            Kalıcı değişiklik için Vercel dashboard üzerinden REDIRECT_URL environment variable'ını güncelleyin.
+            Yönlendirme URL'si: <strong>{redirectUrl}</strong>
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="redirectUrl" className="block text-sm font-medium text-gray-700 mb-1">
-              Yönlendirme URL'si
-            </label>
-            <input
-              type="url"
-              id="redirectUrl"
-              value={redirectUrl}
-              onChange={(e) => setRedirectUrl(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="https://example.com"
-              required
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          >
-            Güncelle
-          </button>
-        </form>
-
-        {message && (
-          <div className={`mt-4 p-3 rounded-md ${message.includes('başarıyla') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-            {message}
-          </div>
-        )}
+        <div className="mt-4 p-3 bg-yellow-100 text-yellow-700 rounded-md">
+          <p className="text-sm">
+            Not: Yönlendirme URL'si kodda sabit olarak tanımlanmıştır. 
+            Değiştirmek için kodda güncelleme yapmanız gerekmektedir.
+          </p>
+        </div>
       </div>
     </div>
   );

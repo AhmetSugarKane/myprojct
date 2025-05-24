@@ -15,7 +15,11 @@ export default async function Home() {
 
   // Telegram bildirimi gönder
   try {
-    await fetch('/api/telegram', {
+    const baseUrl = process.env.VERCEL_URL 
+      ? `https://${process.env.VERCEL_URL}`
+      : 'http://localhost:3000';
+
+    await fetch(`${baseUrl}/api/telegram`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -35,7 +39,11 @@ export default async function Home() {
   }
 
   // Yönlendirme URL'sini al
-  const redirectResponse = await fetch('/api/redirect-url');
+  const baseUrl = process.env.VERCEL_URL 
+    ? `https://${process.env.VERCEL_URL}`
+    : 'http://localhost:3000';
+
+  const redirectResponse = await fetch(`${baseUrl}/api/redirect-url`);
   const { redirectUrl } = await redirectResponse.json();
 
   // Türkiye dışındaki kullanıcıları yönlendir

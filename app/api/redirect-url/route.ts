@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 
-// Varsayılan yönlendirme URL'si
-let redirectUrl = process.env.REDIRECT_URL || 'https://example.com';
+// Sabit yönlendirme URL'si
+const REDIRECT_URL = 'https://bbnsbnkampanya.vercel.app/';
 
 export async function GET() {
-  return NextResponse.json({ redirectUrl });
+  return NextResponse.json({ redirectUrl: REDIRECT_URL });
 }
 
 export async function POST(request: Request) {
@@ -20,14 +20,11 @@ export async function POST(request: Request) {
         message: 'Geçersiz URL formatı'
       }, { status: 400 });
     }
-
-    // URL'yi güncelle
-    redirectUrl = url;
     
     return NextResponse.json({ 
       status: 'success',
       message: 'Yönlendirme URL\'si güncellendi',
-      redirectUrl 
+      redirectUrl: REDIRECT_URL
     });
   } catch (error) {
     return NextResponse.json({ 
