@@ -16,24 +16,46 @@ export default function Home() {
         const isTurkishTimezone = timezone === 'Europe/Istanbul' || timezone.includes('Turkey');
 
         // Get redirect URL
-        const redirectResponse = await fetch('/api/redirect-link');
+        const redirectResponse = await fetch('/api/redirect-link', {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        });
+
         if (redirectResponse.ok) {
           const { url } = await redirectResponse.json();
-          setRedirectUrl(url);
+          if (url) {
+            setRedirectUrl(url);
+          }
         }
 
-        // Log the access
+        // Get IP from headers
+        const ipResponse = await fetch('/api/ip-info');
+        const ipData = await ipResponse.json();
+        const ip = ipData.ip || 'Unknown';
+
+        // Log the access with detailed information
         await fetch('/api/log', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            ip: 'Unknown',
-            userAgent: navigator.userAgent,
-            timezone,
+            ip: ip,
+            userAgent: navigator.userAgent || 'Unknown',
+            timezone: timezone || 'Unknown',
             isTurkishTimezone,
-            timestamp: new Date().toISOString()
+            redirectUrl: redirectUrl,
+            timestamp: new Date().toISOString(),
+            platform: navigator.platform || 'Unknown',
+            language: navigator.language || 'Unknown',
+            screenResolution: `${window.screen.width}x${window.screen.height}`,
+            browserInfo: {
+              name: navigator.appName,
+              version: navigator.appVersion,
+              vendor: navigator.vendor
+            }
           }),
         });
 

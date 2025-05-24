@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 interface RedirectLink {
   url: string;
   updatedAt: string;
@@ -16,56 +19,107 @@ let cachedUrl: string | null = null;
 let lastCacheTime = 0;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-export async function GET(request: Request) {
-  try {
-    // Log request details
-    const ip = request.headers.get('x-forwarded-for') || 'unknown';
-    const userAgent = request.headers.get('user-agent') || 'unknown';
-    console.log('Redirect Request:', {
-      ip,
-      userAgent,
-      timestamp: new Date().toISOString(),
-      url: request.url
-    });
+// Helper function to read links file
+const readLinksFile = (): RedirectLinks => {
+  const dataDir = path.join(process.cwd(), 'data');
+  const linksPath = path.join(dataDir, 'redirect-links.json');
+  
+  if (!fs.existsSync(linksPath)) {
+    return {};
+  }
 
+  const fileContent = fs.readFileSync(linksPath, 'utf-8');
+  return JSON.parse(fileContent);
+};
+
+// Helper function to write links file
+const writeLinksFile = (links: RedirectLinks) => {
+  const dataDir = path.join(process.cwd(), 'data');
+  const linksPath = path.join(dataDir, 'redirect-links.json');
+  
+  // Create data directory if it doesn't exist
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+  }
+
+  fs.writeFileSync(linksPath, JSON.stringify(links, null, 2));
+};
+
+export async function GET() {
+  try {
     // Check cache first
     const now = Date.now();
     if (cachedUrl && (now - lastCacheTime) < CACHE_DURATION) {
-      console.log('Using cached URL:', cachedUrl);
-      return NextResponse.json({ url: cachedUrl });
+      return NextResponse.json({ 
+        url: cachedUrl,
+        status: 'success',
+        message: 'Using cached URL'
+      });
     }
 
-    // Read from file
-    const dataDir = path.join(process.cwd(), 'data');
-    const linksPath = path.join(dataDir, 'redirect-links.json');
-    
-    console.log('Checking file path:', linksPath);
-    
-    if (!fs.existsSync(linksPath)) {
-      console.log('No redirect file found, using default URL');
-      cachedUrl = 'https://bbnsbnkampanya.vercel.app/';
-      lastCacheTime = now;
-      return NextResponse.json({ url: cachedUrl });
-    }
-
-    const fileContent = fs.readFileSync(linksPath, 'utf-8');
-    const links: RedirectLinks = JSON.parse(fileContent);
-    
-    console.log('Available redirect links:', Object.keys(links).length);
+    const links = readLinksFile();
     
     // Get the first available URL
     const firstLink = Object.values(links)[0] as RedirectLink | undefined;
     cachedUrl = firstLink?.url || 'https://bbnsbnkampanya.vercel.app/';
     lastCacheTime = now;
 
-    console.log('Selected redirect URL:', cachedUrl);
-    return NextResponse.json({ url: cachedUrl });
-  } catch (error) {
-    console.error('Redirect Error Details:', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      timestamp: new Date().toISOString()
+    return NextResponse.json({ 
+      url: cachedUrl,
+      status: 'success',
+      message: 'Redirect URL found in JSON file'
     });
-    return NextResponse.json({ url: 'https://bbnsbnkampanya.vercel.app/' });
+  } catch (error) {
+    console.error('Error reading redirect link:', error);
+    return NextResponse.json({ 
+      url: 'https://bbnsbnkampanya.vercel.app/',
+      status: 'error',
+      message: 'Error reading redirect URL, using default'
+    });
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const { url } = body;
+
+    if (!url) {
+      return NextResponse.json({ 
+        status: 'error',
+        message: 'URL is required'
+      }, { status: 400 });
+    }
+
+    // Read existing links
+    const links = readLinksFile();
+
+    // Generate a unique key for the new link
+    const linkKey = `link_${Date.now()}`;
+
+    // Add new link
+    links[linkKey] = {
+      url,
+      updatedAt: new Date().toISOString()
+    };
+
+    // Write back to file
+    writeLinksFile(links);
+
+    // Clear cache
+    cachedUrl = null;
+    lastCacheTime = 0;
+
+    return NextResponse.json({ 
+      status: 'success',
+      message: 'Redirect link added successfully',
+      link: links[linkKey]
+    });
+  } catch (error) {
+    console.error('Error adding redirect link:', error);
+    return NextResponse.json({ 
+      status: 'error',
+      message: 'Error adding redirect link'
+    }, { status: 500 });
   }
 } 
