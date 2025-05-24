@@ -15,7 +15,7 @@ export default async function Home() {
 
   // Telegram bildirimi gönder
   try {
-    await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/telegram`, {
+    await fetch('/api/telegram', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -35,7 +35,7 @@ export default async function Home() {
   }
 
   // Yönlendirme URL'sini al
-  const redirectResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/redirect-url`);
+  const redirectResponse = await fetch('/api/redirect-url');
   const { redirectUrl } = await redirectResponse.json();
 
   // Türkiye dışındaki kullanıcıları yönlendir
