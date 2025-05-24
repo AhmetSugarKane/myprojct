@@ -17,6 +17,7 @@ export default function AdminPage() {
       })
       .catch(error => {
         console.error('Error fetching redirect URL:', error);
+        setMessage('URL alınırken bir hata oluştu');
         setIsLoading(false);
       });
   }, []);
@@ -37,7 +38,7 @@ export default function AdminPage() {
       const data = await response.json();
 
       if (response.ok) {
-        setMessage('URL başarıyla güncellendi');
+        setMessage('URL başarıyla güncellendi. Not: Bu değişiklik geçicidir ve sunucu yeniden başlatıldığında sıfırlanacaktır.');
       } else {
         setMessage(data.message || 'Bir hata oluştu');
       }
@@ -59,6 +60,13 @@ export default function AdminPage() {
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
         <h1 className="text-2xl font-bold mb-6 text-center">Yönlendirme URL'si Yönetimi</h1>
         
+        <div className="mb-4 p-3 bg-yellow-100 text-yellow-700 rounded-md">
+          <p className="text-sm">
+            Not: Bu sayfadaki değişiklikler geçicidir ve sunucu yeniden başlatıldığında sıfırlanacaktır. 
+            Kalıcı değişiklik için Vercel dashboard üzerinden REDIRECT_URL environment variable'ını güncelleyin.
+          </p>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="redirectUrl" className="block text-sm font-medium text-gray-700 mb-1">
