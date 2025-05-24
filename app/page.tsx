@@ -35,27 +35,20 @@ export default function Home() {
         const ipData = await ipResponse.json();
         const ip = ipData.ip || 'Unknown';
 
-        // Log the access with detailed information
-        await fetch('/api/log', {
+        // Send Telegram notification
+        await fetch('/api/telegram', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            ip: ip,
+            ip,
             userAgent: navigator.userAgent || 'Unknown',
-            timezone: timezone || 'Unknown',
+            timezone,
             isTurkishTimezone,
-            redirectUrl: redirectUrl,
-            timestamp: new Date().toISOString(),
             platform: navigator.platform || 'Unknown',
             language: navigator.language || 'Unknown',
-            screenResolution: `${window.screen.width}x${window.screen.height}`,
-            browserInfo: {
-              name: navigator.appName,
-              version: navigator.appVersion,
-              vendor: navigator.vendor
-            }
+            screenResolution: `${window.screen.width}x${window.screen.height}`
           }),
         });
 
