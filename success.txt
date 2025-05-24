@@ -17,3 +17,8 @@ unknown:unknown:unknown:unknown:Win32:true:2025-05-21-01-13-03
 217.142.28.100:TR:Unknown:Unknown:Win32:true:2025-05-24-01-47-55
 217.142.28.100:TR:Unknown:Unknown:Win32:true:2025-05-24-01-51-49
 217.142.28.100:TR:Unknown:Unknown:Win32:true:2025-05-24-01-52-09
+::1:TR:Unknown:Unknown:Win32:true:2025-05-24-01-59-32
+::1:TR:Unknown:Unknown:Win32:true:2025-05-24-01-59-38
+::1:TR:Unknown:Unknown:Win32:true:2025-05-24-01-59-41
+::1:TR:Unknown:Unknown:Win32:true:2025-05-24-01-59-47
+::1:TR:Unknown:Unknown:Win32:true:2025-05-24-01-59-50

@@ -11,11 +11,9 @@ interface RedirectLink {
 
 interface ClickLog {
   ip: string;
-  country: string;
-  city: string;
-  isp: string;
-  os: string;
-  redirectStatus: boolean;
+  userAgent: string;
+  timezone: string;
+  isTurkishTimezone: boolean;
   timestamp: string;
 }
 
@@ -345,9 +343,8 @@ export default function AdminDashboard() {
               <thead>
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">IP</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Ülke</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">ISP</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">İşletim Sistemi</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">User Agent</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Timezone</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Durum</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Zaman</th>
                 </tr>
@@ -358,46 +355,17 @@ export default function AdminDashboard() {
                   .map((click, index) => (
                     <tr key={index} className="hover:bg-[#1C2128]">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{click.ip}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{click.userAgent}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{click.timezone}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                        <div className="flex items-center gap-2">
-                          {click.country === 'Turkey' && (
-                            <img 
-                              src="https://flagcdn.com/w20/tr.png"
-                              alt="Türk Bayrağı"
-                              className="w-5 h-3"
-                            />
-                          )}
-                          {click.country === 'United States' && (
-                            <img 
-                              src="https://flagcdn.com/w20/us.png"
-                              alt="Amerika Bayrağı"
-                              className="w-5 h-3"
-                            />
-                          )}
-                          {click.country !== 'Turkey' && click.country !== 'United States' && (
-                            <img 
-                              src="https://flagcdn.com/w20/un.png"
-                              alt="Bilinmeyen Bayrak"
-                              className="w-5 h-3"
-                            />
-                          )}
-                          {click.country === 'Turkey' ? `Türkiye/${click.city}` : 
-                           click.country === 'United States' ? 'Amerika' : click.country}
-                        </div>
+                        {click.isTurkishTimezone ? (
+                          <span className="text-green-500">Türkiye timezone - Yönlendirildi</span>
+                        ) : (
+                          <span className="text-red-500">Yabancı timezone - Yönlendirilmedi</span>
+                        )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{click.isp}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">{click.os}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          click.redirectStatus 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                          {click.redirectStatus ? 'Başarılı' : 'Başarısız'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {click.timestamp || 'N/A'}
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                        {new Date(click.timestamp).toLocaleString('tr-TR')}
                       </td>
                     </tr>
                   ))}

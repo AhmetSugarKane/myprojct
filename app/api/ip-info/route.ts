@@ -6,88 +6,42 @@ export const revalidate = 0;
 
 export async function GET() {
   try {
-    console.log('[DEBUG v0.007] IP API isteği başlatılıyor...');
-
-    // Get client IP from headers
     const headersList = await headers();
-    const forwardedFor = headersList.get('x-forwarded-for');
-    const ip = forwardedFor ? forwardedFor.split(',')[0].trim() : null;
+    const userAgent = headersList.get('user-agent') || 'Unknown';
+    const ip = headersList.get('x-forwarded-for')?.split(',')[0].trim() || 'Unknown';
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const isTurkishTimezone = timezone === 'Europe/Istanbul' || timezone.includes('Turkey');
 
-    if (!ip) {
-      console.error('[DEBUG v0.007] IP adresi bulunamadı');
-      return NextResponse.json({
-        status: 'success',
-        country: 'TR',
-        countryCode: 'TR',
-        region: 'Unknown',
-        regionName: 'Unknown',
-        city: 'Unknown',
-        isp: 'Unknown',
-        org: 'Unknown',
-        as: 'Unknown',
-        query: 'Unknown'
-      });
-    }
-
-    // Get location data from ipapi.com
-    const geoResponse = await fetch(`https://ipapi.co/${ip}/json/`, {
-      method: 'GET',
+    // Log the access
+    await fetch('/api/log', {
+      method: 'POST',
       headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
       },
-      next: { revalidate: 0 }
+      body: JSON.stringify({
+        ip,
+        userAgent,
+        timezone,
+        isTurkishTimezone,
+        timestamp: new Date().toISOString()
+      }),
     });
 
-    if (!geoResponse.ok) {
-      console.error('[DEBUG v0.007] Geo API yanıt hatası:', geoResponse.status);
-      return NextResponse.json({
-        status: 'success',
-        country: 'TR',
-        countryCode: 'TR',
-        region: 'Unknown',
-        regionName: 'Unknown',
-        city: 'Unknown',
-        isp: 'Unknown',
-        org: 'Unknown',
-        as: 'Unknown',
-        query: ip
-      });
-    }
-
-    const geoData = await geoResponse.json();
-    console.log('[DEBUG v0.007] Geo API yanıtı alındı:', geoData);
-
-    // Format the response
-    const formattedData = {
-      status: 'success',
-      country: geoData.country_name || 'Unknown',
-      countryCode: geoData.country_code || 'Unknown',
-      region: geoData.region_code || 'Unknown',
-      regionName: geoData.region || 'Unknown',
-      city: geoData.city || 'Unknown',
-      isp: geoData.org || 'Unknown',
-      org: geoData.org || 'Unknown',
-      as: geoData.asn || 'Unknown',
-      query: ip
-    };
-
-    return NextResponse.json(formattedData);
-  } catch (error) {
-    console.error('[DEBUG v0.007] IP API Error:', error);
-    
-    // Default response in case of error
     return NextResponse.json({
       status: 'success',
-      country: 'TR',
-      countryCode: 'TR',
-      region: 'Unknown',
-      regionName: 'Unknown',
-      city: 'Unknown',
-      isp: 'Unknown',
-      org: 'Unknown',
-      as: 'Unknown',
-      query: 'Unknown'
+      isTurkishTimezone,
+      timezone,
+      ip,
+      userAgent
+    });
+  } catch (error) {
+    console.error('Timezone check error:', error);
+    return NextResponse.json({
+      status: 'error',
+      isTurkishTimezone: false,
+      timezone: 'Unknown',
+      ip: 'Unknown',
+      userAgent: 'Unknown'
     });
   }
 } 

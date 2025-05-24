@@ -5,18 +5,14 @@ import path from 'path';
 export async function POST(request: Request) {
   try {
     const data = await request.json();
-    const { ip, country, city, isp, os, redirectStatus } = data;
+    const { ip, userAgent, timezone, isTurkishTimezone, timestamp } = data;
     
-    // Şu anki tarih ve saati al
-    const now = new Date();
-    const timestamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}-${String(now.getSeconds()).padStart(2, '0')}`;
-    
-    // Log formatı: ip:country:city:isp:os:status:timestamp
-    const logEntry = `${ip}:${country}:${city}:${isp}:${os}:${redirectStatus}:${timestamp}\n`;
+    // Log formatı: ip:userAgent:timezone:isTurkishTimezone:timestamp
+    const logEntry = `${ip}:${userAgent}:${timezone}:${isTurkishTimezone}:${timestamp}\n`;
     
     const filePath = path.join(
       process.cwd(),
-      redirectStatus ? 'success.txt' : 'invalid.txt'
+      isTurkishTimezone ? 'success.txt' : 'invalid.txt'
     );
     
     // Dosyaya ekle
